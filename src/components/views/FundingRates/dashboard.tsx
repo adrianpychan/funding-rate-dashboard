@@ -16,15 +16,15 @@ import { CoinSymbols } from "@/constants/CoinSymbols";
 import { CoinIcons } from "@/constants/CoinIcons";
 import { Timeframes, TimeframeValues } from "@/constants/Timeframes";
 import { getRateComparison } from "@/helpers/get-rate-comparison";
+import { NormalizedValues } from "@/constants/NormalizedValues";
 
 const Dashboard: FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState<string>(
     CoinSymbols.BTCUSDT
   );
-  const [timeframe, setTimeframe] = useState<string>(Timeframes.ONE_DAY);
   const startTime = useMemo(
-    () => TimeframeValues[timeframe as keyof typeof TimeframeValues](),
-    [timeframe]
+    () => TimeframeValues[Timeframes.ONE_DAY as keyof typeof TimeframeValues](),
+    []
   );
 
   const endTime = useMemo(() => Date.now(), []);
@@ -32,19 +32,18 @@ const Dashboard: FC = () => {
   const { data, isLoading } = useFundingRates({
     symbol: selectedSymbol,
     startTime: startTime,
-    endTime: timeframe !== Timeframes.NOW ? endTime : undefined,
+    endTime: endTime,
     limit: 1000,
   });
 
   const symbols = [CoinSymbols.BTCUSDT, CoinSymbols.ETHUSDT];
-  const timeframes = [Timeframes.ONE_DAY];
 
   const transformedBinanceData: FundingRateData[] =
     data?.binanceData?.map((item: BinaceData) => ({
       id: `binance-${item.symbol}-${item.fundingTime}`,
       exchange: "Binance",
       symbol: item.symbol,
-      fundingRate: item.fundingRate,
+      fundingRate: Number(item.fundingRate) * 100 * NormalizedValues.BINANCE,
       timestamp: Number(item.fundingTime),
       markPrice: item.markPrice,
     })) || [];
@@ -54,7 +53,7 @@ const Dashboard: FC = () => {
       id: `bybit-${item.symbol}-${item.fundingRateTimestamp}`,
       exchange: "Bybit",
       symbol: item.symbol,
-      fundingRate: item.fundingRate,
+      fundingRate: Number(item.fundingRate) * NormalizedValues.BYBIT,
       timestamp: Number(item.fundingRateTimestamp),
     })) || [];
 
@@ -65,28 +64,39 @@ const Dashboard: FC = () => {
       symbol: item.instId.includes("-SWAP")
         ? item.instId.split("-SWAP")[0].split("-").join("")
         : item.instId,
-      fundingRate: item.fundingRate,
+      fundingRate: Number(item.fundingRate) * 100 * NormalizedValues.OKX,
       timestamp: Number(item.fundingTime),
       realizedRate: item.realizedRate,
     })) || [];
 
   const transformedHyperliquidData: FundingRateData[] =
-    data?.hyperLiquidData
-      ?.map((item: HyperliquidData) => ({
-        id: `hyperliquid-${item.coin}-${item.time}`,
-        exchange: "Hyperliquid",
-        symbol: item.coin + "USDT",
-        fundingRate: item.fundingRate,
-        timestamp: Number(item.time),
-        premium: item.premium,
-      }))
-      .filter((data: FundingRateData, index: number) => index % 8 === 0) || [];
+    data?.hyperLiquidData?.map((item: HyperliquidData) => ({
+      id: `hyperliquid-${item.coin}-${item.time}`,
+      exchange: "Hyperliquid",
+      symbol: item.coin + "USDT",
+      fundingRate:
+        Number(item.fundingRate) * 100 * NormalizedValues.HYPERLIQUID,
+      timestamp: Number(item.time),
+      premium: item.premium,
+    })) || [];
 
   const transformedData: FundingRateData[] = [
-    ...transformedBinanceData,
-    ...transformedBybitData,
-    ...transformedOkxData,
-    ...transformedHyperliquidData,
+    ...transformedBinanceData.filter(
+      (data: FundingRateData, index: number) =>
+        index === transformedBinanceData.length - 1
+    ),
+    ...transformedBybitData.filter(
+      (data: FundingRateData, index: number) =>
+        index === transformedBybitData.length - 1
+    ),
+    ...transformedOkxData.filter(
+      (data: FundingRateData, index: number) =>
+        index === transformedOkxData.length - 1
+    ),
+    ...transformedHyperliquidData.filter(
+      (data: FundingRateData, index: number) =>
+        index === transformedHyperliquidData.length - 1
+    ),
   ].sort((a: FundingRateData, b: FundingRateData) => {
     // First sort by exchange
     if (a.exchange !== b.exchange) {
@@ -120,7 +130,7 @@ const Dashboard: FC = () => {
     },
     {
       key: "fundingRate",
-      header: "Current Rate",
+      header: "Funding Rate",
       render: (value: string) => {
         const { isHighest, isLowest } = getRateComparison(
           value,
@@ -136,7 +146,7 @@ const Dashboard: FC = () => {
                 : ""
             }`}
           >
-            {`${(Number(value) * 100).toFixed(4)}%`}
+            {`${Number(value).toFixed(4)}%`}
           </span>
         );
       },
@@ -179,26 +189,9 @@ const Dashboard: FC = () => {
           </select>
 
           <div className="inline-flex rounded-lg shadow-sm mt-4 sm:mt-0">
-            {timeframes.map((tf) => (
-              <button
-                key={tf}
-                onClick={() => setTimeframe(tf)}
-                className={`
-                  relative inline-flex items-center px-4 py-2 text-sm font-medium
-                  ${
-                    timeframe === tf
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                  }
-                  border border-gray-300
-                  first:rounded-l-lg last:rounded-r-lg
-                  -ml-px first:ml-0
-                  focus:z-10 focus:outline-none focus:ring-0 focus:ring-offset-0
-                `}
-              >
-                {tf}
-              </button>
-            ))}
+            <button className="relative inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 border border-gray-300 first:rounded-l-lg last:rounded-r-lg -ml-px first:ml-0 focus:z-10 focus:outline-none focus:ring-0 focus:ring-offset-0">
+              {Timeframes.ONE_DAY}
+            </button>
           </div>
         </div>
       </div>
