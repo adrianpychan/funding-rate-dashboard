@@ -39,46 +39,62 @@ const Dashboard: FC = () => {
   const symbols = [CoinSymbols.BTCUSDT, CoinSymbols.ETHUSDT];
 
   const transformedBinanceData: FundingRateData[] =
-    data?.binanceData?.map((item: BinaceData) => ({
-      id: `binance-${item.symbol}-${item.fundingTime}`,
-      exchange: "Binance",
-      symbol: item.symbol,
-      fundingRate: Number(item.fundingRate) * 100 * NormalizedValues.BINANCE,
-      timestamp: Number(item.fundingTime),
-      markPrice: item.markPrice,
-    })) || [];
+    data?.binanceData
+      ?.map((item: BinaceData) => ({
+        id: `binance-${item.symbol}-${item.fundingTime}`,
+        exchange: "Binance",
+        symbol: item.symbol,
+        fundingRate: Number(item.fundingRate) * 100 * NormalizedValues.BINANCE,
+        timestamp: Number(item.fundingTime),
+        markPrice: item.markPrice,
+      }))
+      .sort((a: FundingRateData, b: FundingRateData) => {
+        return a.timestamp - b.timestamp;
+      }) || [];
 
   const transformedBybitData: FundingRateData[] =
-    data?.bybitData?.map((item: BybitData) => ({
-      id: `bybit-${item.symbol}-${item.fundingRateTimestamp}`,
-      exchange: "Bybit",
-      symbol: item.symbol,
-      fundingRate: Number(item.fundingRate) * NormalizedValues.BYBIT,
-      timestamp: Number(item.fundingRateTimestamp),
-    })) || [];
+    data?.bybitData
+      ?.map((item: BybitData) => ({
+        id: `bybit-${item.symbol}-${item.fundingRateTimestamp}`,
+        exchange: "Bybit",
+        symbol: item.symbol,
+        fundingRate: Number(item.fundingRate) * NormalizedValues.BYBIT,
+        timestamp: Number(item.fundingRateTimestamp),
+      }))
+      .sort((a: FundingRateData, b: FundingRateData) => {
+        return a.timestamp - b.timestamp;
+      }) || [];
 
   const transformedOkxData: FundingRateData[] =
-    data?.okxData?.map((item: OkxData) => ({
-      id: `okx-${item.instId}-${item.fundingTime}`,
-      exchange: "OKX",
-      symbol: item.instId.includes("-SWAP")
-        ? item.instId.split("-SWAP")[0].split("-").join("")
-        : item.instId,
-      fundingRate: Number(item.fundingRate) * 100 * NormalizedValues.OKX,
-      timestamp: Number(item.fundingTime),
-      realizedRate: item.realizedRate,
-    })) || [];
+    data?.okxData
+      ?.map((item: OkxData) => ({
+        id: `okx-${item.instId}-${item.fundingTime}`,
+        exchange: "OKX",
+        symbol: item.instId.includes("-SWAP")
+          ? item.instId.split("-SWAP")[0].split("-").join("")
+          : item.instId,
+        fundingRate: Number(item.fundingRate) * 100 * NormalizedValues.OKX,
+        timestamp: Number(item.fundingTime),
+        realizedRate: item.realizedRate,
+      }))
+      .sort((a: FundingRateData, b: FundingRateData) => {
+        return a.timestamp - b.timestamp;
+      }) || [];
 
   const transformedHyperliquidData: FundingRateData[] =
-    data?.hyperLiquidData?.map((item: HyperliquidData) => ({
-      id: `hyperliquid-${item.coin}-${item.time}`,
-      exchange: "Hyperliquid",
-      symbol: item.coin + "USDT",
-      fundingRate:
-        Number(item.fundingRate) * 100 * NormalizedValues.HYPERLIQUID,
-      timestamp: Number(item.time),
-      premium: item.premium,
-    })) || [];
+    data?.hyperLiquidData
+      ?.map((item: HyperliquidData) => ({
+        id: `hyperliquid-${item.coin}-${item.time}`,
+        exchange: "Hyperliquid",
+        symbol: item.coin + "USDT",
+        fundingRate:
+          Number(item.fundingRate) * 100 * NormalizedValues.HYPERLIQUID,
+        timestamp: Number(item.time),
+        premium: item.premium,
+      }))
+      .sort((a: FundingRateData, b: FundingRateData) => {
+        return a.timestamp - b.timestamp;
+      }) || [];
 
   const transformedData: FundingRateData[] = [
     ...transformedBinanceData.filter(
