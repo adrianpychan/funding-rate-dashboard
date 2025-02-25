@@ -163,6 +163,8 @@ const Dashboard: FC = () => {
     },
   ];
 
+  console.log(data);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
