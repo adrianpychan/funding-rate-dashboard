@@ -1,6 +1,7 @@
 "use client";
 
 import { FC, useState, useMemo } from "react";
+import Image from "next/image";
 import { useFundingRates } from "@/app/hooks/useFundingRates";
 import { format } from "date-fns";
 import DataTables from "@/components/dataTables";
@@ -12,11 +13,9 @@ import {
   HyperliquidData,
 } from "@/interfaces/funding-rates/funding-rates-interface";
 import { CoinSymbols } from "@/constants/CoinSymbols";
+import { CoinIcons } from "@/constants/CoinIcons";
 import { Timeframes, TimeframeValues } from "@/constants/Timeframes";
 import { getRateComparison } from "@/helpers/get-rate-comparison";
-import btcIcon from "cryptocurrency-icons/svg/color/btc.svg";
-import ethIcon from "cryptocurrency-icons/svg/color/eth.svg";
-import Image from "next/image";
 
 const Dashboard: FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState<string>(
@@ -98,11 +97,6 @@ const Dashboard: FC = () => {
     return a.timestamp - b.timestamp;
   });
 
-  const coinIcons = {
-    [CoinSymbols.BTCUSDT]: btcIcon,
-    [CoinSymbols.ETHUSDT]: ethIcon,
-  };
-
   const columns = [
     {
       key: "symbol",
@@ -112,7 +106,7 @@ const Dashboard: FC = () => {
           <Image
             alt={value}
             className="w-4 h-4"
-            src={coinIcons[value as keyof typeof coinIcons]}
+            src={CoinIcons[value as keyof typeof CoinIcons]}
             width={16}
             height={16}
           />
