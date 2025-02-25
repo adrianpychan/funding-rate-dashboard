@@ -38,12 +38,7 @@ const Dashboard: FC = () => {
   });
 
   const symbols = [CoinSymbols.BTCUSDT, CoinSymbols.ETHUSDT];
-  const timeframes = [
-    Timeframes.ONE_DAY,
-    Timeframes.ONE_WEEK,
-    Timeframes.ONE_MONTH,
-    Timeframes.ONE_YEAR,
-  ];
+  const timeframes = [Timeframes.ONE_DAY];
 
   const transformedBinanceData: FundingRateData[] =
     data?.binanceData?.map((item: BinaceData) => ({
@@ -77,23 +72,31 @@ const Dashboard: FC = () => {
     })) || [];
 
   const transformedHyperliquidData: FundingRateData[] =
-    data?.hyperLiquidData?.map((item: HyperliquidData) => ({
-      id: `hyperliquid-${item.coin}-${item.time}`,
-      exchange: "Hyperliquid",
-      symbol: item.coin + "USDT",
-      fundingRate: item.fundingRate,
-      timestamp: Number(item.time),
-      premium: item.premium,
-    })) || [];
+    data?.hyperLiquidData
+      ?.map((item: HyperliquidData) => ({
+        id: `hyperliquid-${item.coin}-${item.time}`,
+        exchange: "Hyperliquid",
+        symbol: item.coin + "USDT",
+        fundingRate: item.fundingRate,
+        timestamp: Number(item.time),
+        premium: item.premium,
+      }))
+      .filter((data: FundingRateData, index: number) => index % 8 === 0) || [];
 
   const transformedData: FundingRateData[] = [
     ...transformedBinanceData,
     ...transformedBybitData,
     ...transformedOkxData,
     ...transformedHyperliquidData,
-  ];
+  ].sort((a: FundingRateData, b: FundingRateData) => {
+    // First sort by exchange
+    if (a.exchange !== b.exchange) {
+      return a.exchange.localeCompare(b.exchange);
+    }
 
-  console.log(data);
+    // Then sort by timestamp
+    return a.timestamp - b.timestamp;
+  });
 
   const coinIcons = {
     [CoinSymbols.BTCUSDT]: btcIcon,
@@ -153,11 +156,6 @@ const Dashboard: FC = () => {
         }
         return "-";
       },
-    },
-    {
-      key: "markPrice",
-      header: "Mark Price",
-      render: (value: string | undefined) => value || "-",
     },
   ];
 
