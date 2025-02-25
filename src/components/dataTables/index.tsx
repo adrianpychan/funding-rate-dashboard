@@ -54,12 +54,12 @@ const DataTables: FC<DataTablesProps> = ({
             <div className="inline-block min-w-full py-2 align-middle sm:px-7 lg:px-9">
               <table className="min-w-full divide-y divide-gray-300">
                 <thead>
-                  <tr>
+                  <tr className="bg-slate-200">
                     {columns.map((column) => (
                       <th
                         key={column.key}
                         scope="col"
-                        className="whitespace-nowrap px-5 py-4 text-left text-md font-semibold text-gray-900 first:pl-4 first:pr-3 first:sm:pl-0"
+                        className="whitespace-nowrap px-5 py-4 text-left text-md font-semibold text-gray-900"
                       >
                         {column.header}
                       </th>
@@ -68,11 +68,11 @@ const DataTables: FC<DataTablesProps> = ({
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {data.map((row, rowIndex) => (
-                    <tr key={row.id || rowIndex}>
+                    <tr key={row.id || rowIndex} className="hover:bg-slate-100">
                       {columns.map((column) => (
                         <td
                           key={`${row.id || rowIndex}-${column.key}`}
-                          className="whitespace-nowrap p-4 text-md text-gray-500 first:pl-4 first:pr-3 first:sm:pl-0"
+                          className="whitespace-nowrap p-4 text-md text-gray-500 px-5 py-4 "
                         >
                           {column.render
                             ? column.render(row[column.key], row)
