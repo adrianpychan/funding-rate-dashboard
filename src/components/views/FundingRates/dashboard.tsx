@@ -9,11 +9,11 @@ import {
   BybitData,
   OkxData,
   FundingRateData,
+  HyperliquidData,
 } from "@/interfaces/funding-rates/funding-rates-interface";
 import { CoinSymbols } from "@/constants/CoinSymbols";
 import { Timeframes, TimeframeValues } from "@/constants/Timeframes";
 import { getRateComparison } from "@/helpers/get-rate-comparison";
-import { normalizeRate } from "@/helpers/normalize-rate";
 import btcIcon from "cryptocurrency-icons/svg/color/btc.svg";
 import ethIcon from "cryptocurrency-icons/svg/color/eth.svg";
 import Image from "next/image";
@@ -22,7 +22,7 @@ const Dashboard: FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState<string>(
     CoinSymbols.BTCUSDT
   );
-  const [timeframe, setTimeframe] = useState<string>(Timeframes.NOW);
+  const [timeframe, setTimeframe] = useState<string>(Timeframes.ONE_DAY);
   const startTime = useMemo(
     () => TimeframeValues[timeframe as keyof typeof TimeframeValues](),
     [timeframe]
@@ -32,14 +32,13 @@ const Dashboard: FC = () => {
 
   const { data, isLoading } = useFundingRates({
     symbol: selectedSymbol,
-    startTime: timeframe !== Timeframes.NOW ? startTime : undefined,
+    startTime: startTime,
     endTime: timeframe !== Timeframes.NOW ? endTime : undefined,
     limit: 1000,
   });
 
   const symbols = [CoinSymbols.BTCUSDT, CoinSymbols.ETHUSDT];
   const timeframes = [
-    Timeframes.NOW,
     Timeframes.ONE_DAY,
     Timeframes.ONE_WEEK,
     Timeframes.ONE_MONTH,
@@ -54,9 +53,6 @@ const Dashboard: FC = () => {
       fundingRate: item.fundingRate,
       timestamp: Number(item.fundingTime),
       markPrice: item.markPrice,
-      annualizedRate: (
-        normalizeRate(item.fundingRate, "Binance") * 365
-      ).toString(),
     })) || [];
 
   const transformedBybitData: FundingRateData[] =
@@ -66,9 +62,6 @@ const Dashboard: FC = () => {
       symbol: item.symbol,
       fundingRate: item.fundingRate,
       timestamp: Number(item.fundingRateTimestamp),
-      annualizedRate: (
-        normalizeRate(item.fundingRate, "Bybit") * 365
-      ).toString(),
     })) || [];
 
   const transformedOkxData: FundingRateData[] =
@@ -81,14 +74,26 @@ const Dashboard: FC = () => {
       fundingRate: item.fundingRate,
       timestamp: Number(item.fundingTime),
       realizedRate: item.realizedRate,
-      annualizedRate: (normalizeRate(item.fundingRate, "OKX") * 365).toString(),
+    })) || [];
+
+  const transformedHyperliquidData: FundingRateData[] =
+    data?.hyperLiquidData?.map((item: HyperliquidData) => ({
+      id: `hyperliquid-${item.coin}-${item.time}`,
+      exchange: "Hyperliquid",
+      symbol: item.coin + "USDT",
+      fundingRate: item.fundingRate,
+      timestamp: Number(item.time),
+      premium: item.premium,
     })) || [];
 
   const transformedData: FundingRateData[] = [
     ...transformedBinanceData,
     ...transformedBybitData,
     ...transformedOkxData,
+    ...transformedHyperliquidData,
   ];
+
+  console.log(data);
 
   const coinIcons = {
     [CoinSymbols.BTCUSDT]: btcIcon,
@@ -140,32 +145,14 @@ const Dashboard: FC = () => {
       },
     },
     {
-      key: "annualizedRate",
-      header: "24h Equivalent",
-      render: (value: string, row: FundingRateData) => {
-        const { isHighest, isLowest } = getRateComparison(
-          row.fundingRate,
-          transformedData
-        );
-        return (
-          <span
-            className={`${
-              isHighest
-                ? "text-green-600 font-bold"
-                : isLowest
-                ? "text-red-600 font-bold"
-                : ""
-            }`}
-          >
-            {`${(Number(value) * 100).toFixed(2)}%`}
-          </span>
-        );
-      },
-    },
-    {
       key: "timestamp",
       header: "Time",
-      render: (value: number) => format(value, "MM/dd/yyyy, HH:mm:ss"),
+      render: (value: number) => {
+        if (typeof value === "number") {
+          return format(value, "MM/dd/yyyy, HH:mm:ss");
+        }
+        return "-";
+      },
     },
     {
       key: "markPrice",
@@ -173,8 +160,6 @@ const Dashboard: FC = () => {
       render: (value: string | undefined) => value || "-",
     },
   ];
-
-  console.log(data);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -192,7 +177,7 @@ const Dashboard: FC = () => {
           <select
             value={selectedSymbol}
             onChange={(e) => setSelectedSymbol(e.target.value)}
-            className="block w-48 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+            className="border border-solid border-black p-2 block w-48 rounded-lg shadow-sm text-sm outline-none focus:ring-0 focus:ring-offset-0"
           >
             {symbols.map((symbol) => (
               <option key={symbol} value={symbol}>
@@ -210,13 +195,13 @@ const Dashboard: FC = () => {
                   relative inline-flex items-center px-4 py-2 text-sm font-medium
                   ${
                     timeframe === tf
-                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
                       : "bg-white text-gray-700 hover:bg-gray-50"
                   }
                   border border-gray-300
                   first:rounded-l-lg last:rounded-r-lg
                   -ml-px first:ml-0
-                  focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500
+                  focus:z-10 focus:outline-none focus:ring-0 focus:ring-offset-0
                 `}
               >
                 {tf}

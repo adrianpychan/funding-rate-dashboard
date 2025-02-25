@@ -21,15 +21,22 @@ export async function get({
   return parsedResponse;
 }
 
-export async function post(
-  apiEndpoint: string,
-  data: any,
-  responseHeader?: Headers
-) {
+export async function post({
+  apiEndpoint,
+  body,
+  responseHeader,
+}: {
+  apiEndpoint: string;
+  body?: any;
+  responseHeader?: any;
+}) {
   const response = await fetch(apiEndpoint, {
     method: "POST",
-    body: JSON.stringify(data),
-    ...responseHeader,
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+      ...responseHeader,
+    },
   });
 
   if (!response.ok) {
@@ -46,10 +53,22 @@ export async function post(
   return parsedResponse;
 }
 
-export async function patch(apiEndpoint: string, data: any) {
+export async function patch({
+  apiEndpoint,
+  data,
+  responseHeader,
+}: {
+  apiEndpoint: string;
+  data: any;
+  responseHeader?: any;
+}) {
   const response = await fetch(apiEndpoint, {
     method: "PATCH",
     body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+      ...responseHeader,
+    },
   });
 
   if (!response.ok) {
@@ -61,7 +80,13 @@ export async function patch(apiEndpoint: string, data: any) {
   return parsedResponse;
 }
 
-export async function del(apiEndpoint: string, params: any) {
+export async function del({
+  apiEndpoint,
+  params,
+}: {
+  apiEndpoint: string;
+  params: any;
+}) {
   const response = await fetch(`${apiEndpoint}${getParams(params)}`, {
     method: "DELETE",
   });

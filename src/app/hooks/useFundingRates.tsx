@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import getBinanceFundingRates from "../api/get/fundingRates/getBinanceFundingRates";
 import getBybitFundingRates from "../api/get/fundingRates/getByBitFundingRates";
 import getOkxFundingRates from "../api/get/fundingRates/getOkxFundingRates";
-// import getHyperliquidFundingRates from "../api/get/fundingRates/getHyperliquidFundingRates";
+import postHyperliquidFundingRates from "../api/post/fundingRates/postHyperliquidFundingRates";
 
 export const useFundingRates = ({
   symbol,
@@ -12,10 +12,19 @@ export const useFundingRates = ({
   limit,
 }: {
   symbol: string;
-  startTime?: number;
+  startTime: number;
   endTime?: number;
   limit?: number;
 }) => {
+  const { mutateAsync: fetchHyperliquidFundingRates } = useMutation({
+    mutationFn: () =>
+      postHyperliquidFundingRates({
+        symbol,
+        startTime: startTime,
+        endTime: endTime || undefined,
+      }),
+  });
+
   const { data, isLoading, error } = useQuery({
     queryKey: [
       "funding-rates",
@@ -37,26 +46,31 @@ export const useFundingRates = ({
         }
       };
 
-      const [binanceData, bybitResponse, okxResponse] = await Promise.all([
-        fetchWithFallback(
-          () => getBinanceFundingRates({ symbol, startTime, endTime, limit }),
-          "Binance"
-        ),
-        fetchWithFallback(
-          () => getBybitFundingRates({ symbol, startTime, endTime, limit }),
-          "Bybit"
-        ),
-        fetchWithFallback(
-          () => getOkxFundingRates({ symbol, startTime, endTime, limit }),
-          "OKX"
-        ),
-      ]);
+      const [binanceData, bybitResponse, okxResponse, hyperLiquidResponse] =
+        await Promise.all([
+          fetchWithFallback(
+            () => getBinanceFundingRates({ symbol, startTime, endTime, limit }),
+            "Binance"
+          ),
+          fetchWithFallback(
+            () => getBybitFundingRates({ symbol, startTime, endTime, limit }),
+            "Bybit"
+          ),
+          fetchWithFallback(
+            () => getOkxFundingRates({ symbol, startTime, endTime, limit }),
+            "OKX"
+          ),
+          fetchWithFallback(
+            () => fetchHyperliquidFundingRates(),
+            "Hyperliquid"
+          ),
+        ]);
 
       return {
         binanceData: binanceData || [],
         bybitData: bybitResponse?.result?.list || [],
         okxData: okxResponse?.data || [],
-        hyperLiquidData: [],
+        hyperLiquidData: hyperLiquidResponse || [],
       };
     },
   });

@@ -28,3 +28,10 @@ export interface FundingRateData {
   markPrice?: string;
   annualizedRate?: string;
 }
+
+export interface HyperliquidData {
+  coin: string;
+  fundingRate: string;
+  time: number;
+  premium: string;
+}

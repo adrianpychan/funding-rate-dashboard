@@ -1,9 +1,9 @@
 export enum Timeframes {
   NOW = "Current",
-  ONE_DAY = "1D",
-  ONE_WEEK = "1W",
-  ONE_MONTH = "1M",
-  ONE_YEAR = "1Y",
+  ONE_DAY = "1 Day",
+  ONE_WEEK = "7 Day",
+  ONE_MONTH = "30 Day",
+  ONE_YEAR = "1 Year",
 }
 
 export const TimeframeValues: Record<Timeframes, () => number> = {
