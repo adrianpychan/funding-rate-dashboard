@@ -2,10 +2,12 @@ import { get } from "@/common/api";
 
 const getBinanceFundingRates = async ({
   symbol,
+  startTime,
   endTime,
   limit,
 }: {
   symbol: string;
+  startTime?: number;
   endTime?: number;
   limit?: number;
 }) => {
@@ -14,6 +16,7 @@ const getBinanceFundingRates = async ({
     params: {
       symbol: symbol,
       limit: limit,
+      startTime: startTime,
       endTime: endTime,
     },
   });

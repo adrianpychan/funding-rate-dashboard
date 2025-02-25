@@ -2,10 +2,12 @@ import { get } from "@/common/api";
 
 const getBybitFundingRates = async ({
   symbol,
+  startTime,
   endTime,
   limit,
 }: {
   symbol: string;
+  startTime?: number;
   endTime?: number;
   limit?: number;
 }) => {
@@ -15,6 +17,7 @@ const getBybitFundingRates = async ({
       category: "linear",
       symbol: symbol,
       limit: limit,
+      startTime: startTime,
       endTime: endTime,
     },
   });

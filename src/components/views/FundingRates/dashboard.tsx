@@ -12,47 +12,39 @@ import {
 } from "@/interfaces/funding-rates/funding-rates-interface";
 import { CoinSymbols } from "@/constants/CoinSymbols";
 import { Timeframes, TimeframeValues } from "@/constants/Timeframes";
+import { getRateComparison } from "@/helpers/get-rate-comparison";
+import { normalizeRate } from "@/helpers/normalize-rate";
+import btcIcon from "cryptocurrency-icons/svg/color/btc.svg";
+import ethIcon from "cryptocurrency-icons/svg/color/eth.svg";
+import Image from "next/image";
 
 const Dashboard: FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState<string>(
     CoinSymbols.BTCUSDT
   );
-  const [timeframe, setTimeframe] = useState<string>(Timeframes.ONE_DAY);
-  const endTime = useMemo(
-    () => TimeframeValues[timeframe as keyof typeof TimeframeValues],
+  const [timeframe, setTimeframe] = useState<string>(Timeframes.NOW);
+  const startTime = useMemo(
+    () => TimeframeValues[timeframe as keyof typeof TimeframeValues](),
     [timeframe]
   );
 
+  const endTime = useMemo(() => Date.now(), []);
+
   const { data, isLoading } = useFundingRates({
     symbol: selectedSymbol,
-    endTime,
-    limit: 1,
+    startTime: timeframe !== Timeframes.NOW ? startTime : undefined,
+    endTime: timeframe !== Timeframes.NOW ? endTime : undefined,
+    limit: 1000,
   });
-
-  console.log(endTime);
 
   const symbols = [CoinSymbols.BTCUSDT, CoinSymbols.ETHUSDT];
   const timeframes = [
+    Timeframes.NOW,
     Timeframes.ONE_DAY,
     Timeframes.ONE_WEEK,
     Timeframes.ONE_MONTH,
     Timeframes.ONE_YEAR,
   ];
-
-  // Normalize rates to 24-hour equivalent
-  const normalizeRate = (rate: string, exchange: string): number => {
-    const baseRate = Number(rate);
-    // Different exchanges have different funding intervals
-    const intervalsPerDay = {
-      Binance: 3, // 8-hour intervals
-      Bybit: 3, // 8-hour intervals
-      OKX: 3, // 8-hour intervals
-      // HyperLiquid: 24, // 1-hour intervals
-    };
-    return baseRate * intervalsPerDay[exchange as keyof typeof intervalsPerDay];
-  };
-
-  console.log(data);
 
   const transformedBinanceData: FundingRateData[] =
     data?.binanceData?.map((item: BinaceData) => ({
@@ -98,24 +90,77 @@ const Dashboard: FC = () => {
     ...transformedOkxData,
   ];
 
+  const coinIcons = {
+    [CoinSymbols.BTCUSDT]: btcIcon,
+    [CoinSymbols.ETHUSDT]: ethIcon,
+  };
+
   const columns = [
+    {
+      key: "symbol",
+      header: "Symbol",
+      render: (value: string) => (
+        <div className="flex items-center gap-2">
+          <Image
+            alt={value}
+            className="w-4 h-4"
+            src={coinIcons[value as keyof typeof coinIcons]}
+            width={16}
+            height={16}
+          />
+          {value}
+        </div>
+      ),
+    },
     {
       key: "exchange",
       header: "Exchange",
     },
     {
-      key: "symbol",
-      header: "Symbol",
-    },
-    {
       key: "fundingRate",
       header: "Current Rate",
-      render: (value: string) => `${(Number(value) * 100).toFixed(4)}%`,
+      render: (value: string) => {
+        const { isHighest, isLowest } = getRateComparison(
+          value,
+          transformedData
+        );
+        return (
+          <span
+            className={`${
+              isHighest
+                ? "text-green-600 font-bold"
+                : isLowest
+                ? "text-red-600 font-bold"
+                : ""
+            }`}
+          >
+            {`${(Number(value) * 100).toFixed(4)}%`}
+          </span>
+        );
+      },
     },
     {
       key: "annualizedRate",
       header: "24h Equivalent",
-      render: (value: string) => `${(Number(value) * 100).toFixed(2)}%`,
+      render: (value: string, row: FundingRateData) => {
+        const { isHighest, isLowest } = getRateComparison(
+          row.fundingRate,
+          transformedData
+        );
+        return (
+          <span
+            className={`${
+              isHighest
+                ? "text-green-600 font-bold"
+                : isLowest
+                ? "text-red-600 font-bold"
+                : ""
+            }`}
+          >
+            {`${(Number(value) * 100).toFixed(2)}%`}
+          </span>
+        );
+      },
     },
     {
       key: "timestamp",
@@ -129,44 +174,67 @@ const Dashboard: FC = () => {
     },
   ];
 
+  console.log(data);
+
   return (
-    <div className="my-10">
-      <div className="flex gap-4 mb-4">
-        <select
-          value={selectedSymbol}
-          onChange={(e) => setSelectedSymbol(e.target.value)}
-          className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        >
-          {symbols.map((symbol) => (
-            <option key={symbol} value={symbol}>
-              {symbol}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex rounded-md shadow-sm">
-        {timeframes.map((tf) => (
-          <button
-            key={tf}
-            onClick={() => setTimeframe(tf)}
-            className={`px-4 py-2 text-sm font-medium ${
-              timeframe === tf
-                ? "bg-indigo-600 text-white"
-                : " text-gray-700 hover:bg-gray-50"
-            } border border-gray-300 first:rounded-l-md last:rounded-r-md -ml-px first:ml-0`}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="sm:flex sm:items-center sm:justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Funding Rates
+          </h1>
+          <p className="mt-2 text-sm text-gray-700">
+            Compare funding rates across major exchanges
+          </p>
+        </div>
+
+        <div className="mt-4 sm:mt-0 sm:flex sm:items-center space-x-4">
+          <select
+            value={selectedSymbol}
+            onChange={(e) => setSelectedSymbol(e.target.value)}
+            className="block w-48 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
           >
-            {tf}
-          </button>
-        ))}
+            {symbols.map((symbol) => (
+              <option key={symbol} value={symbol}>
+                {symbol}
+              </option>
+            ))}
+          </select>
+
+          <div className="inline-flex rounded-lg shadow-sm mt-4 sm:mt-0">
+            {timeframes.map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                className={`
+                  relative inline-flex items-center px-4 py-2 text-sm font-medium
+                  ${
+                    timeframe === tf
+                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                  }
+                  border border-gray-300
+                  first:rounded-l-lg last:rounded-r-lg
+                  -ml-px first:ml-0
+                  focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500
+                `}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <DataTables
-        title="Funding Rates"
-        description={`Current funding rates across exchanges (${timeframe} view)`}
-        columns={columns}
-        data={transformedData}
-        isLoading={isLoading}
-      />
+      <div className="">
+        <DataTables
+          title=""
+          description=""
+          columns={columns}
+          data={transformedData}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 };

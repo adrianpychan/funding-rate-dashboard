@@ -7,64 +7,57 @@ import getOkxFundingRates from "../api/get/fundingRates/getOkxFundingRates";
 
 export const useFundingRates = ({
   symbol,
+  startTime,
   endTime,
   limit,
 }: {
   symbol: string;
+  startTime?: number;
   endTime?: number;
   limit?: number;
 }) => {
   const { data, isLoading, error } = useQuery({
-    queryKey: ["funding-rates", symbol, endTime?.toString()],
+    queryKey: [
+      "funding-rates",
+      symbol,
+      startTime?.toString(),
+      endTime?.toString(),
+      limit?.toString(),
+    ],
     queryFn: async () => {
-      const results = {
-        binanceData: [],
-        bybitData: [],
-        okxData: [],
-        hyperLiquidData: [],
+      const fetchWithFallback = async (
+        fetcher: () => Promise<any>,
+        exchange: string
+      ) => {
+        try {
+          return await fetcher();
+        } catch (error) {
+          console.error(`${exchange} API error:`, error);
+          return null;
+        }
       };
 
-      try {
-        results.binanceData = await getBinanceFundingRates({
-          symbol,
-          endTime,
-          limit,
-        });
-      } catch (error) {
-        console.error("Binance API error:", error);
-      }
+      const [binanceData, bybitResponse, okxResponse] = await Promise.all([
+        fetchWithFallback(
+          () => getBinanceFundingRates({ symbol, startTime, endTime, limit }),
+          "Binance"
+        ),
+        fetchWithFallback(
+          () => getBybitFundingRates({ symbol, startTime, endTime, limit }),
+          "Bybit"
+        ),
+        fetchWithFallback(
+          () => getOkxFundingRates({ symbol, startTime, endTime, limit }),
+          "OKX"
+        ),
+      ]);
 
-      try {
-        const bybitResponse = await getBybitFundingRates({
-          symbol,
-          endTime,
-          limit,
-        });
-        results.bybitData = bybitResponse?.result?.list;
-      } catch (error) {
-        console.error("Bybit API error:", error);
-      }
-
-      try {
-        const okxResponse = await getOkxFundingRates({
-          symbol,
-          endTime,
-          limit,
-        });
-        results.okxData = okxResponse?.data;
-      } catch (error) {
-        console.error("OKX API error:", error);
-      }
-
-      // try {
-      //   results.hyperLiquidData = await getHyperliquidFundingRates({
-      //     symbol,
-      //   });
-      // } catch (error) {
-      //   console.error("HyperLiquid API error:", error);
-      // }
-
-      return results;
+      return {
+        binanceData: binanceData || [],
+        bybitData: bybitResponse?.result?.list || [],
+        okxData: okxResponse?.data || [],
+        hyperLiquidData: [],
+      };
     },
   });
 

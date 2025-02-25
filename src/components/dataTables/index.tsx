@@ -5,7 +5,7 @@ import LoadSpinner from "@/components/molecules/LoadSpinner";
 interface Column {
   key: string;
   header: string;
-  render?: (value: any) => React.ReactNode;
+  render?: (value: any, row: any) => React.ReactNode;
 }
 
 interface DataTablesProps {
@@ -75,7 +75,7 @@ const DataTables: FC<DataTablesProps> = ({
                           className="whitespace-nowrap px-2 py-2 text-sm text-gray-500 first:pl-4 first:pr-3 first:sm:pl-0"
                         >
                           {column.render
-                            ? column.render(row[column.key])
+                            ? column.render(row[column.key], row)
                             : row[column.key]}
                         </td>
                       ))}

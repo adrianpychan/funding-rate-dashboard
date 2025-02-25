@@ -2,10 +2,12 @@ import { get } from "@/common/api";
 
 const getOkxFundingRates = async ({
   symbol,
+  startTime,
   endTime,
   limit,
 }: {
   symbol: string;
+  startTime?: number;
   endTime?: number;
   limit?: number;
 }) => {
@@ -27,6 +29,7 @@ const getOkxFundingRates = async ({
     params: {
       instId: symbolString,
       limit: limit,
+      before: startTime,
       after: endTime,
     },
   });
