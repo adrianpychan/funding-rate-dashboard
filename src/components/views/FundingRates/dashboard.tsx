@@ -22,12 +22,8 @@ const Dashboard: FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState<string>(
     CoinSymbols.BTCUSDT
   );
-  const startTime = useMemo(
-    () => TimeframeValues[Timeframes.ONE_DAY as keyof typeof TimeframeValues](),
-    []
-  );
-
-  const endTime = useMemo(() => Date.now(), []);
+  const startTime = useMemo(() => TimeframeValues[Timeframes.ONE_WEEK](), []);
+  const endTime = useMemo(() => TimeframeValues[Timeframes.ONE_DAY](), []);
 
   const { data, isLoading } = useFundingRates({
     symbol: selectedSymbol,
